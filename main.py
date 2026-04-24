@@ -28,6 +28,22 @@ class DbSessionMiddleware(BaseMiddleware):
             data['session'] = session
             return await handler(event, data)
 
+async def dummy_server():
+    from aiohttp import web
+    import os
+    
+    async def handle(request):
+        return web.Response(text="Bot is running!")
+        
+    app = web.Application()
+    app.router.add_get('/', handle)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    port = int(os.environ.get("PORT", 8080))
+    site = web.TCPSite(runner, '0.0.0.0', port)
+    await site.start()
+    print(f"Dummy web server started on port {port}")
+
 async def main():
     # Инициализация БД
     await init_db()
@@ -43,6 +59,9 @@ async def main():
     dp.include_router(common.router)
     dp.include_router(seeker.router)
     dp.include_router(employer.router)
+    
+    # Запускаем фейковый веб-сервер для Render
+    await dummy_server()
     
     print("Бот успешно запущен!")
     await bot.delete_webhook(drop_pending_updates=True)
