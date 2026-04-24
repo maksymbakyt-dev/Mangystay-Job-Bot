@@ -151,14 +151,19 @@ async def process_decision(callback: CallbackQuery, session: AsyncSession):
     
     if action == "accept":
         await callback.message.edit_text(callback.message.text + "\n\n✅ Принят / Қабылданды / Accepted!")
+        
+        employer_contact = f"@{callback.from_user.username}" if callback.from_user.username else f"<a href='tg://user?id={callback.from_user.id}'>Профиль</a>"
+        
         try:
             await callback.bot.send_message(
                 resume.user_id,
-                f"🎉 Вас пригласили на вакансию / Сізді жұмысқа шақырды / You were invited: '{vacancy.title}'.\n"
-                f"Контакт/Байланыс/Contact: @{callback.from_user.username}"
+                f"🎉 <b>Вас пригласили на вакансию! / Сізді жұмысқа шақырды! / You were invited!</b>\n\n"
+                f"📌 Вакансия: '{vacancy.title}'\n"
+                f"🔗 Контакт работодателя: {employer_contact}",
+                parse_mode="HTML"
             )
-        except:
-            pass
+        except Exception as e:
+            print(f"Error notifying seeker: {e}")
     else:
         await callback.message.edit_text(callback.message.text + "\n\n❌ Отклонен / Бас тартылды / Rejected.")
         try:

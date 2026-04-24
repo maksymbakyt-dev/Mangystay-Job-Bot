@@ -230,22 +230,26 @@ async def process_apply(callback: CallbackQuery, session: AsyncSession):
         emp_user = result_emp.scalar_one_or_none()
         emp_lang = emp_user.language if emp_user else "ru"
         
-        seeker_name = result_user.scalar_one().name
+        seeker_user = callback.from_user
+        seeker_contact = f"@{seeker_user.username}" if seeker_user.username else f"<a href='tg://user?id={seeker_user.id}'>Профиль</a>"
         
-        text = (f"🎉 Новый отклик на вакансию '{vacancy.title}'!\n\n"
-                f"Соискатель: {seeker_name}\n"
-                f"Возраст: {resume.age}\n"
-                f"Навыки: {resume.skills}\n"
-                f"Опыт: {resume.experience}\n"
-                f"Языки: {resume.languages}")
+        text = (f"🎉 <b>Новый отклик на вакансию '{vacancy.title}'!</b>\n\n"
+                f"👤 Соискатель: {seeker_user.full_name}\n"
+                f"🔗 Контакт: {seeker_contact}\n"
+                f"📊 Соответствие: {percent}%\n"
+                f"🎂 Возраст: {resume.age}\n"
+                f"🛠 Навыки: {resume.skills}\n"
+                f"💼 Опыт: {resume.experience}\n"
+                f"🗣 Языки: {resume.languages}")
         try:
             await callback.bot.send_message(
                 employer_tg_id, 
                 text, 
+                parse_mode="HTML",
                 reply_markup=get_employer_decision_keyboard(app.id, emp_lang)
             )
         except Exception as e:
-            print(f"Error: {e}")
+            print(f"Error notifying employer: {e}")
             
     await callback.message.edit_reply_markup(reply_markup=None)
     await callback.message.reply(LEXICON[lang]["applied_success"])

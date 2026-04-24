@@ -77,11 +77,15 @@ async def send_photo_instruction(message: Message, session: AsyncSession):
     lang = user.language if user else "ru"
     await message.answer(LEXICON[lang]["photo_inst"])
 
+# ID вашей группы для сбора объявлений
+ADMIN_GROUP_ID = -5177804602
+
 @router.message(F.photo)
 async def handle_photo(message: Message, session: AsyncSession):
     import os
     from datetime import datetime
     
+    # Сохраняем локально (на всякий случай)
     if not os.path.exists("photos"):
         os.makedirs("photos")
         
@@ -92,6 +96,21 @@ async def handle_photo(message: Message, session: AsyncSession):
     filename = f"photos/{datetime.now().strftime('%Y%m%d_%H%M%S')}_{message.from_user.id}.jpg"
     await message.bot.download_file(file_path, filename)
     
+    # Пересылаем фото в вашу группу
+    user_info = f"📸 Новое фото объявления!\n" \
+                f"👤 От: {message.from_user.full_name}\n" \
+                f"🆔 ID: {message.from_user.id}\n" \
+                f"🔗 Username: @{message.from_user.username if message.from_user.username else 'нет'}"
+    
+    try:
+        await message.bot.send_photo(
+            chat_id=ADMIN_GROUP_ID,
+            photo=photo_id,
+            caption=user_info
+        )
+    except Exception as e:
+        print(f"Ошибка при отправке в группу: {e}")
+
     result = await session.execute(select(User).where(User.tg_id == message.from_user.id))
     user = result.scalar_one_or_none()
     lang = user.language if user else "ru"
